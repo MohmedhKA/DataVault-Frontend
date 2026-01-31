@@ -11,8 +11,8 @@ const PatientLogin = () => {
     const { login } = useAuth();
     const navigate = useNavigate();
 
-    const [id, setId] = useState('');
-    const [pwd, setPwd] = useState('');
+    const [patientId, setPatientId] = useState(''); // Changed from 'id' to 'patientId'
+    const [password, setPassword] = useState(''); // Changed from 'pwd' to 'password'
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
 
@@ -21,17 +21,23 @@ const PatientLogin = () => {
         setLoading(true);
         setError('');
 
+        console.log('🔐 Attempting login with:', { patientId, passwordLength: password.length });
+
         try {
-            const res = await login(id, pwd, 'patient');
+            const res = await login(patientId, password, 'patient');
+            console.log('✅ Login response:', res);
+            
             if (res.success) {
                 navigate('/dashboard');
             } else {
                 setError(res.error || 'Login failed. Please check your credentials.');
             }
         } catch (err) {
-            setError('Network error. Please ensure the backend is running.');
+            console.error('❌ Login error:', err);
+            setError(err.message || 'Network error. Please ensure the backend is running.');
+        } finally {
+            setLoading(false);
         }
-        setLoading(false);
     };
 
     return (
@@ -64,29 +70,55 @@ const PatientLogin = () => {
                         <div style={{ marginBottom: '1.5rem' }}>
                             <label style={{ display: 'block', marginBottom: '0.75rem', color: 'var(--text-muted)', fontSize: '0.9rem', fontWeight: '500' }}>Patient ID</label>
                             <Input
-                                value={id}
-                                onChange={(e) => setId(e.target.value)}
-                                placeholder="e.g. PAT001"
+                                value={patientId}
+                                onChange={(e) => setPatientId(e.target.value)}
+                                placeholder="e.g. P1234"
                                 style={{ padding: '1rem', fontSize: '1.1rem' }}
                                 required
                             />
+                            <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>
+                                Use the Patient ID from your registration
+                            </p>
                         </div>
                         <div style={{ marginBottom: '2rem' }}>
                             <label style={{ display: 'block', marginBottom: '0.75rem', color: 'var(--text-muted)', fontSize: '0.9rem', fontWeight: '500' }}>Password</label>
                             <Input
                                 type="password"
-                                value={pwd}
-                                onChange={(e) => setPwd(e.target.value)}
+                                value={password}
+                                onChange={(e) => setPassword(e.target.value)}
                                 placeholder="••••••••"
                                 style={{ padding: '1rem', fontSize: '1.1rem' }}
                                 required
                             />
                         </div>
 
-                        {error && <div style={{ color: '#ef4444', marginBottom: '1.5rem', padding: '0.75rem', background: 'rgba(239, 68, 68, 0.1)', borderRadius: '8px', fontSize: '0.9rem', textAlign: 'center' }}>{error}</div>}
+                        {error && (
+                            <div style={{ 
+                                color: '#ef4444', 
+                                marginBottom: '1.5rem', 
+                                padding: '0.75rem', 
+                                background: 'rgba(239, 68, 68, 0.1)', 
+                                borderRadius: '8px', 
+                                fontSize: '0.9rem', 
+                                textAlign: 'center',
+                                border: '1px solid rgba(239, 68, 68, 0.2)'
+                            }}>
+                                ❌ {error}
+                            </div>
+                        )}
 
-                        <Button type="submit" isLoading={loading} style={{ width: '100%', padding: '1rem', fontSize: '1.1rem', background: 'var(--confidence-gradient)' }}>
-                            Enter with Confidence
+                        <Button 
+                            type="submit" 
+                            isLoading={loading} 
+                            disabled={loading}
+                            style={{ 
+                                width: '100%', 
+                                padding: '1rem', 
+                                fontSize: '1.1rem', 
+                                background: 'var(--confidence-gradient)' 
+                            }}
+                        >
+                            {loading ? 'Logging in...' : 'Enter with Confidence'}
                         </Button>
                     </form>
 

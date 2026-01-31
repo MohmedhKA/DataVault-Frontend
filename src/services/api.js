@@ -18,19 +18,29 @@ const getHeaders = () => {
 // Generic API call handler with error handling
 const apiCall = async (url, options = {}) => {
     try {
+        console.log(`📤 API Call: ${options.method || 'GET'} ${url}`);
+        console.log('📦 Request body:', options.body ? JSON.parse(options.body) : 'none');
+
         const response = await fetch(`${API_URL}${url}`, {
             ...options,
             headers: getHeaders()
         });
 
         const data = await response.json();
+        console.log('📥 Response:', data);
 
         if (!response.ok) {
+            // Show detailed validation errors
+            if (data.details && Array.isArray(data.details)) {
+                const errorMessages = data.details.map(d => `${d.field}: ${d.message}`).join(', ');
+                throw new Error(errorMessages);
+            }
             throw new Error(data.error || data.details || 'API request failed');
         }
 
         return data;
     } catch (error) {
+        console.error('❌ API Error:', error);
         if (error.name === 'TypeError' && error.message.includes('fetch')) {
             throw new Error('Backend server is not running. Please start: npm start in backend folder');
         }

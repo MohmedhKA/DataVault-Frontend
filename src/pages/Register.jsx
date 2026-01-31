@@ -71,8 +71,8 @@ const Register = () => {
 
             // Redirect to login after 3 seconds
             setTimeout(() => {
-                navigate('/patient-login');
-            }, 3000);
+                navigate('/login/patient');
+            }, 5000);
 
         } catch (err) {
             console.error('❌ Registration failed:', err);

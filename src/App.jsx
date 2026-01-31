@@ -6,6 +6,7 @@ import PatientLogin from './pages/PatientLogin';
 import DoctorLogin from './pages/DoctorLogin';
 import Register from './pages/Register';
 import PatientDashboard from './pages/PatientDashboard';
+import DoctorRegister from './pages/DoctorRegister'; 
 import DoctorDashboard from './pages/DoctorDashboard';
 import AuditHistory from './pages/AuditHistory';
 import NotFound from './pages/NotFound';
@@ -35,8 +36,8 @@ function App() {
           <Route path="/login" element={<LoginSelection />} />
           <Route path="/login/patient" element={<PatientLogin />} />
           <Route path="/login/doctor" element={<DoctorLogin />} />
-
-          <Route path="/register" element={<Register />} />
+          <Route path="/register/patient" element={<Register />} />
+          <Route path="/register/doctor" element={<DoctorRegister />} />
 
           <Route path="/dashboard" element={
             <ProtectedRoute allowedRoles={['patient']}>
