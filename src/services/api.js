@@ -1,5 +1,7 @@
-const API_URL = 'http://localhost:3000/api';
+// API Base URL - matches your backend
+const API_URL = 'http://localhost:3000/api/v1';
 
+// Helper to get auth headers
 const getHeaders = () => {
     const token = localStorage.getItem('token');
     return {
@@ -8,80 +10,206 @@ const getHeaders = () => {
     };
 };
 
-export const api = {
-    auth: {
-        loginPatient: async (patientID, password) => {
-            try {
-                const response = await fetch(`${API_URL}/auth/login/patient`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ patientID, password })
-                });
-                if (!response.ok) {
-                    const error = await response.json();
-                    throw new Error(error.error || 'Login failed');
-                }
-                return response.json();
-            } catch (error) {
-                console.error("Login API Error:", error);
-                if (error.name === 'TypeError' && error.message.includes('fetch')) {
-                    throw new Error("Backend server is not running on port 3000.");
-                }
-                throw error;
-            }
-        },
-        loginDoctor: async (doctorID, password) => {
-            try {
-                const response = await fetch(`${API_URL}/auth/login/doctor`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ doctorID, password })
-                });
-                if (!response.ok) {
-                    const error = await response.json();
-                    throw new Error(error.error || 'Login failed');
-                }
-                return response.json();
-            } catch (error) {
-                console.error("Doctor Login API Error:", error);
-                throw error;
-            }
+// Helper for API calls
+const apiCall = async (url, options = {}) => {
+    try {
+        const response = await fetch(`${API_URL}${url}`, {
+            ...options,
+            headers: getHeaders()
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            throw new Error(data.error || data.details || 'API request failed');
         }
-    },
-    access: {
-        grant: async (doctorID, durationHours, purpose) => {
-            const response = await fetch(`${API_URL}/access/grant`, {
-                method: 'POST',
-                headers: getHeaders(),
-                body: JSON.stringify({ doctorID, durationHours, purpose })
-            });
-            if (!response.ok) {
-                const error = await response.json();
-                throw new Error(error.error || 'Failed to grant access');
-            }
-            return response.json();
-        },
-        revoke: async (accessKey) => {
-            const response = await fetch(`${API_URL}/access/revoke`, {
-                method: 'POST',
-                headers: getHeaders(),
-                body: JSON.stringify({ accessKey })
-            });
-            if (!response.ok) {
-                const error = await response.json();
-                throw new Error(error.error || 'Failed to revoke access');
-            }
-            return response.json();
-        },
-        getActiveKeys: async (patientID) => {
-            const response = await fetch(`${API_URL}/access/active/${patientID}`, {
-                headers: getHeaders()
-            });
-            if (!response.ok) {
-                const error = await response.json();
-                throw new Error(error.error || 'Failed to fetch keys');
-            }
-            return response.json();
+
+        return data;
+    } catch (error) {
+        if (error.name === 'TypeError' && error.message.includes('fetch')) {
+            throw new Error('Backend server is not running. Please start the backend.');
         }
+        throw error;
     }
 };
+
+export const api = {
+    // ========================================================================
+    // AUTHENTICATION
+    // ========================================================================
+    auth: {
+        loginPatient: async (patientId, password) => {
+            return apiCall('/auth/login/patient', {
+                method: 'POST',
+                body: JSON.stringify({ patientId, password })
+            });
+        },
+
+        loginDoctor: async (doctorId, password) => {
+            return apiCall('/auth/login/doctor', {
+                method: 'POST',
+                body: JSON.stringify({ doctorId, password })
+            });
+        },
+
+        logout: () => {
+            localStorage.removeItem('token');
+            localStorage.removeItem('userType');
+            localStorage.removeItem('userId');
+        }
+    },
+
+    // ========================================================================
+    // PATIENT MANAGEMENT
+    // ========================================================================
+    patients: {
+        register: async (patientData) => {
+            return apiCall('/patients/register', {
+                method: 'POST',
+                body: JSON.stringify(patientData)
+            });
+        },
+
+        getProfile: async (patientId) => {
+            return apiCall(`/patients/${patientId}`, {
+                method: 'GET'
+            });
+        },
+
+        getAccessHistory: async (patientId) => {
+            return apiCall(`/patients/${patientId}/history`, {
+                method: 'GET'
+            });
+        }
+    },
+
+    // ========================================================================
+    // DOCTOR MANAGEMENT
+    // ========================================================================
+    doctors: {
+        register: async (doctorData) => {
+            return apiCall('/doctors/register', {
+                method: 'POST',
+                body: JSON.stringify(doctorData)
+            });
+        },
+
+        getProfile: async (doctorId) => {
+            return apiCall(`/doctors/${doctorId}`, {
+                method: 'GET'
+            });
+        },
+
+        verify: async (doctorId) => {
+            return apiCall(`/doctors/${doctorId}/verify`, {
+                method: 'PUT'
+            });
+        },
+
+        getAccessHistory: async (doctorId) => {
+            return apiCall(`/doctors/${doctorId}/history`, {
+                method: 'GET'
+            });
+        }
+    },
+
+    // ========================================================================
+    // ACCESS MANAGEMENT
+    // ========================================================================
+    access: {
+        grant: async (patientId, doctorId, durationHours, purpose) => {
+            return apiCall('/access/grant', {
+                method: 'POST',
+                body: JSON.stringify({
+                    patientID: patientId,
+                    doctorID: doctorId,
+                    durationHours,
+                    purpose
+                })
+            });
+        },
+
+        revoke: async (accessKey) => {
+            return apiCall('/access/revoke', {
+                method: 'POST',
+                body: JSON.stringify({ accessKey })
+            });
+        },
+
+        checkValidity: async (accessKey) => {
+            return apiCall(`/access/check/${accessKey}`, {
+                method: 'GET'
+            });
+        },
+
+        getActiveAccesses: async (patientId) => {
+            return apiCall(`/access/patient/${patientId}`, {
+                method: 'GET'
+            });
+        }
+    },
+
+    // ========================================================================
+    // MEDICAL RECORDS (TO BE IMPLEMENTED)
+    // ========================================================================
+    records: {
+        upload: async (patientId, recordData) => {
+            return apiCall('/records/upload', {
+                method: 'POST',
+                body: JSON.stringify({ patientId, ...recordData })
+            });
+        },
+
+        get: async (recordId) => {
+            return apiCall(`/records/${recordId}`, {
+                method: 'GET'
+            });
+        },
+
+        getPatientRecords: async (patientId) => {
+            return apiCall(`/records/patient/${patientId}`, {
+                method: 'GET'
+            });
+        },
+
+        update: async (recordId, updates) => {
+            return apiCall(`/records/${recordId}`, {
+                method: 'PUT',
+                body: JSON.stringify(updates)
+            });
+        },
+
+        delete: async (recordId) => {
+            return apiCall(`/records/${recordId}`, {
+                method: 'DELETE'
+            });
+        }
+    },
+
+    // ========================================================================
+    // AUDIT TRAIL
+    // ========================================================================
+    audit: {
+        getPatientAuditTrail: async (patientId) => {
+            return apiCall(`/audit/patient/${patientId}`, {
+                method: 'GET'
+            });
+        },
+
+        getDoctorAuditTrail: async (doctorId) => {
+            return apiCall(`/audit/doctor/${doctorId}`, {
+                method: 'GET'
+            });
+        }
+    },
+
+    // ========================================================================
+    // HEALTH CHECK
+    // ========================================================================
+    health: async () => {
+        const response = await fetch('http://localhost:3000/health');
+        return response.json();
+    }
+};
+
+export default api;
