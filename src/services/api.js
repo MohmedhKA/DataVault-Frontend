@@ -1,7 +1,12 @@
-// API Base URL - matches your backend
+// ============================================================================
+// HEALTHCARE BLOCKCHAIN API SERVICE
+// ============================================================================
+// Complete API integration with your backend
+// ============================================================================
+
 const API_URL = 'http://localhost:3000/api/v1';
 
-// Helper to get auth headers
+// Helper to get authentication headers
 const getHeaders = () => {
     const token = localStorage.getItem('token');
     return {
@@ -10,7 +15,7 @@ const getHeaders = () => {
     };
 };
 
-// Helper for API calls
+// Generic API call handler with error handling
 const apiCall = async (url, options = {}) => {
     try {
         const response = await fetch(`${API_URL}${url}`, {
@@ -27,7 +32,7 @@ const apiCall = async (url, options = {}) => {
         return data;
     } catch (error) {
         if (error.name === 'TypeError' && error.message.includes('fetch')) {
-            throw new Error('Backend server is not running. Please start the backend.');
+            throw new Error('Backend server is not running. Please start: npm start in backend folder');
         }
         throw error;
     }
@@ -54,8 +59,7 @@ export const api = {
 
         logout: () => {
             localStorage.removeItem('token');
-            localStorage.removeItem('userType');
-            localStorage.removeItem('userId');
+            localStorage.removeItem('user');
         }
     },
 
@@ -104,12 +108,6 @@ export const api = {
             return apiCall(`/doctors/${doctorId}/verify`, {
                 method: 'PUT'
             });
-        },
-
-        getAccessHistory: async (doctorId) => {
-            return apiCall(`/doctors/${doctorId}/history`, {
-                method: 'GET'
-            });
         }
     },
 
@@ -144,60 +142,6 @@ export const api = {
 
         getActiveAccesses: async (patientId) => {
             return apiCall(`/access/patient/${patientId}`, {
-                method: 'GET'
-            });
-        }
-    },
-
-    // ========================================================================
-    // MEDICAL RECORDS (TO BE IMPLEMENTED)
-    // ========================================================================
-    records: {
-        upload: async (patientId, recordData) => {
-            return apiCall('/records/upload', {
-                method: 'POST',
-                body: JSON.stringify({ patientId, ...recordData })
-            });
-        },
-
-        get: async (recordId) => {
-            return apiCall(`/records/${recordId}`, {
-                method: 'GET'
-            });
-        },
-
-        getPatientRecords: async (patientId) => {
-            return apiCall(`/records/patient/${patientId}`, {
-                method: 'GET'
-            });
-        },
-
-        update: async (recordId, updates) => {
-            return apiCall(`/records/${recordId}`, {
-                method: 'PUT',
-                body: JSON.stringify(updates)
-            });
-        },
-
-        delete: async (recordId) => {
-            return apiCall(`/records/${recordId}`, {
-                method: 'DELETE'
-            });
-        }
-    },
-
-    // ========================================================================
-    // AUDIT TRAIL
-    // ========================================================================
-    audit: {
-        getPatientAuditTrail: async (patientId) => {
-            return apiCall(`/audit/patient/${patientId}`, {
-                method: 'GET'
-            });
-        },
-
-        getDoctorAuditTrail: async (doctorId) => {
-            return apiCall(`/audit/doctor/${doctorId}`, {
                 method: 'GET'
             });
         }
